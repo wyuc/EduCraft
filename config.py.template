@@ -1,0 +1,73 @@
+"""
+Configuration file for AI models.
+
+Instructions:
+1. Copy this file to config.py
+2. Fill in your API keys and update base URLs as needed
+3. Add config.py to .gitignore to prevent committing your API keys
+"""
+import os
+import logging
+from pathlib import Path
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("config")
+
+# Base directory for the project
+BASE_DIR = Path(__file__).parent
+
+# Model configurations
+MODEL_CONFIGS = {
+    "ollama": {
+        "base_url": "http://127.0.0.1:11434",
+        "default_model": "llama2"
+    },
+    
+    "vllm": {
+        "base_url": "http://0.0.0.0:8000/v1",
+        "api_key": "not-needed"
+        "default_model": "THU-KEG/LongWriter-V-7B-DPO"
+    },
+   
+    "claude": {
+        "base_url": "https://api.anthropic.com",
+        "api_key": "",  # Add your Anthropic API key here
+        "default_model": "claude-3-7-sonnet-20250219"
+    },
+    
+    "gemini": {
+        "base_url": "https://generativelanguage.googleapis.com",
+        "api_key": "",  # Add your Google API key here
+        "default_model": "gemini-2.5-pro"
+    },
+    
+    "gpt": {
+        "base_url": "https://api.openai.com/v1",
+        "api_key": "",  # Add your OpenAI API key here
+        "default_model": "gpt-4o-2024-11-20"
+    },
+    
+    "deepseek": {
+        "base_url": "https://api.deepseek.com",
+        "api_key": "",
+        "default_model": "deepseek-reasoner"
+    },
+
+    "gemini_openai": {
+        "base_url": "",
+        "api_key": "",
+        "default_model": "gemini-2.5-pro-preview-03-25"
+    },
+
+    "claude_openai": {
+        "base_url": "",
+        "api_key": "",
+        "default_model": "claude-3-7-sonnet-20250219"
+    }
+}
+
+# Function to get model configuration
+def get_model_config(provider):
+    """Get the configuration for a specific model provider."""
+    return MODEL_CONFIGS.get(provider, {})

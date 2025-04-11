@@ -1,0 +1,31 @@
+# API Clients
+anthropic>=0.15.0    # Claude API client
+google-generativeai>=0.3.2    # Gemini API client
+requests>=2.31.0     # For Ollama and general HTTP requests
+openai>=1.0.0        # OpenAI API client
+
+# PowerPoint Processing
+python-pptx>=0.6.21  # PowerPoint file processing
+Pillow>=10.0.0       # Image processing
+pdf2image>=1.16.3    # PDF to image conversion
+PyMuPDF>=1.23.8      # PDF processing
+openpyxl>=3.1.2      # Excel file processing
+
+# General Dependencies
+python-dotenv>=1.0.0 # Environment variable loading
+tqdm>=4.66.1         # Progress bar display
+pydantic>=2.4.0      # Data validation
+pandas>=2.1.0        # Data processing
+numpy>=1.24.0        # Numerical computing
+
+# Web Application
+streamlit>=1.32.0    # Web interface
+streamlit-sortables>=0.2.0  # Sortable components
+pymongo>=4.6.0       # MongoDB client
+pysqlite3>=3.42.0      # SQLite client
+
+# Development Dependencies
+pytest>=7.4.0        # Unit testing
+black>=23.7.0        # Code formatting
+isort>=5.12.0        # Import sorting
+pylint>=2.17.5       # Code linting 
