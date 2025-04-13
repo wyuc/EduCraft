@@ -19,24 +19,27 @@ def natural_sort_key(s):
     """
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', s)]
 
-def scripts_to_excel(ppt_path, algo, model_provider, output_dir=None):
+def scripts_to_excel(input_path, algo, model_provider, output_dir=None):
     """
     Convert lecture scripts and images to Excel using the SQL storage.
     
     Args:
-        ppt_path (str): Path to the PowerPoint file
+        input_path (str): Path to the input file
         algo (str): Algorithm used for generation (e.g., 'vlm')
         model_provider (str): Model provider name (e.g., 'claude', 'gemini')
-        output_dir (str, optional): Directory to save the Excel file. If None, uses the PPT directory
+        output_dir (str, optional): Directory to save the Excel file. If None, uses the input file directory
     """
     # Get storage instance
     storage = ScriptStorage()
-    
+
+    input_path = Path(input_path)
+    file_name = input_path.stem
+
     # Get the latest completed task matching the criteria
-    latest_task = storage.get_latest_completed_task(ppt_path, algo, model_provider)
-    
+    latest_task = storage.get_latest_completed_task(file_name, algo, model_provider)
+
     if not latest_task:
-        print(f"Error: No completed tasks found for {ppt_path} with algorithm {algo} and provider {model_provider}")
+        print(f"Error: No completed tasks found for {file_name} with algorithm {algo} and provider {model_provider}")
         return
     
     task_id = latest_task['task_id']
@@ -47,7 +50,7 @@ def scripts_to_excel(ppt_path, algo, model_provider, output_dir=None):
         print(f"Error: No slides found for task {task_id}")
         return
     
-    images_dir = get_images_dir(ppt_path)
+    images_dir = get_images_dir(input_path)
     
     # Check if images directory exists
     if not os.path.exists(images_dir):
@@ -120,20 +123,19 @@ def scripts_to_excel(ppt_path, algo, model_provider, output_dir=None):
     if output_dir is None:
         output_dir = BASE_DIR / 'data'
     
-    ppt_basename = os.path.basename(ppt_path).rsplit('.', 1)[0]
-    output_file = os.path.join(output_dir, f"{ppt_basename}_{algo}_{model_provider}_lecture.xlsx")
+    output_file = os.path.join(output_dir, f"{file_name}_{algo}_{model_provider}_lecture.xlsx")
     wb.save(output_file)
     print(f"Excel file created: {output_file}")
 
 def main():
     parser = argparse.ArgumentParser(description='Convert lecture scripts and images to Excel')
-    parser.add_argument('--ppt_path', '-p', help='Path to the PowerPoint file')
-    parser.add_argument('--algo', '-a', help='Algorithm used for generation (e.g., vlm)')
+    parser.add_argument('input_path', help='Path to the input file')
+    parser.add_argument('algo', help='Algorithm used for generation (e.g., vlm)')
     parser.add_argument('--model_provider', '-mp', help='Model provider (e.g., claude, gemini)')
     parser.add_argument('--output-dir', '-o', help='Directory to save the Excel file')
     
     args = parser.parse_args()
-    scripts_to_excel(args.ppt_path, args.algo, args.model_provider, args.output_dir)
+    scripts_to_excel(args.input_path, args.algo, args.model_provider, args.output_dir)
 
 if __name__ == '__main__':
     main()

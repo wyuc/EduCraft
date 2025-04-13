@@ -1,4 +1,4 @@
-from utils import get_temp_dir, preprocess_ppt, extract_and_save_slides
+from utils import get_temp_dir, extract_and_save_slides
 import json
 import logging
 from typing import Dict, List, Optional, Any, Literal
@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 def process_ppt_with_caption_llm(
-    ppt_path: str, 
+    file_name: str,
+    text_content: Dict[str, str],
+    image_urls: List[str],
     model_provider: Literal["claude", "gemini", "gpt", "deepseek"] = "gpt",
     model_name: Optional[str] = "gpt-4o-2024-11-20",
     caption_model_provider: Literal["gpt", "gemini"] = "gpt",
@@ -30,7 +32,9 @@ def process_ppt_with_caption_llm(
     2. Feed the captions to an LLM to generate the final lecture script
     
     Args:
-        ppt_path: Path to the PowerPoint file
+        file_name: Name of the PowerPoint file
+        text_content: Dictionary with slide numbers as keys and extracted text content as values
+        image_urls: List of image URLs for each slide
         model_provider: The model provider to use for the final script generation
         model_name: Specific model name for script generation (optional, uses default if not specified)
         caption_model_provider: The model provider to use for caption generation (default: gpt)
@@ -49,22 +53,13 @@ def process_ppt_with_caption_llm(
     storage = ScriptStorage()
     
     # Create a task in storage with algorithm set to 'caption_llm'
-    task_id = storage.create_task(ppt_path, model_provider, model_name, algo="caption_llm")
-    
-    # Use the preprocess function to convert PPT to images
-    logger.info(f"Preprocessing PowerPoint file: {ppt_path}")
-    text_content, image_urls = preprocess_ppt(ppt_path)
-
-    if not image_urls:
-        logger.error(f"No valid images generated from {ppt_path}")
-        storage.set_error(task_id, "No valid images generated from PowerPoint file")
-        return {}
-    
+    task_id = storage.create_task(file_name, model_provider, model_name, algo="caption_llm")
+   
     slide_count = len(image_urls)
     storage.update_task_status(task_id, TaskStatus.PROCESSING, slide_count)
     
     # Step 1: Generate captions for each slide
-    logger.info(f"Generating captions for {slide_count} slides using {caption_model_provider}:{caption_model_name}...")
+    logger.info(f"Generating captions for {slide_count} slides using {caption_model_provider}...")
     
     # Get model for caption generation
     caption_model = ModelFactory.get_model(caption_model_provider)
@@ -73,8 +68,11 @@ def process_ppt_with_caption_llm(
     for i, image_url in enumerate(image_urls):
         slide_num = i + 1  # Convert to 1-indexed
         
-        # Extract text for this slide
-        slide_text = text_content.get(str(i), "")
+        if text_content:
+            # Extract text for this slide
+            slide_text = text_content.get(str(i), "")
+        else:
+            slide_text = ""
         
         # Create system message for caption generation
         system_message = Message(
@@ -86,7 +84,11 @@ def process_ppt_with_caption_llm(
         message_content = MessageContent()
         if slide_text:
             message_content.entries.append(ContentEntry.text(
-                f"提取的文本内容：\n{slide_text}"
+                f"Extracted text content:\n{slide_text}"
+            ))
+        else:
+            message_content.entries.append(ContentEntry.text(
+                f"No text content available for this slide"
             ))
         message_content.entries.append(ContentEntry.image(image_url))
         
@@ -117,7 +119,7 @@ def process_ppt_with_caption_llm(
     
     # Save all captions to a JSON file for reference
     try:
-        output_dir = get_temp_dir(ppt_path)
+        output_dir = get_temp_dir(file_name)
         with open(output_dir / "captions.json", "w", encoding="utf-8") as f:
             json.dump(captions, f, ensure_ascii=False, indent=2)
         logger.info(f"Saved captions to {output_dir / 'captions.json'}")

@@ -6,7 +6,6 @@ from typing import Dict, List, Optional, Any, Literal
 import logging
 from tqdm import tqdm
 
-from utils import extract_text_from_ppt, preprocess_ppt
 from models.factory import ModelFactory
 from storage import ScriptStorage, TaskStatus
 from models.base import Message, MessageRole, MessageContent, ContentEntry
@@ -16,16 +15,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 def process_ppt_with_iterative(
-    ppt_path: str, 
+    file_name: str,
+    text_content: Dict[str, str],
+    image_urls: List[str],
     model_provider: str,
     model_name: str,
     temperature: float = 0.6,
 ) -> Dict[str, str]:
     """
-    Process a PowerPoint file using iterative approach with GPT.
+    Process a input file using iterative approach.
     
     Args:
-        ppt_path: Path to the PowerPoint file
+        file_name: Name of the input file
+        text_content: Dictionary with slide numbers as keys and extracted text content as values
+        image_urls: List of image URLs for each slide
         model_provider: The model provider to use (default: 'gpt')
         model_name: Specific model name (default: 'gpt-4o-2024-05-13')
         temperature: Temperature parameter for generation
@@ -40,21 +43,13 @@ def process_ppt_with_iterative(
     storage = ScriptStorage()
     
     # Create a task in storage with algorithm set to 'iterative'
-    task_id = storage.create_task(ppt_path, model_provider, model_name, algo="iterative")
-    
-    # Use the preprocess function to convert PPT to images
-    logger.info(f"Preprocessing PowerPoint file: {ppt_path}")
-    text_content, image_urls = preprocess_ppt(ppt_path)
-
-    if not image_urls:
-        logger.error(f"No valid images generated from {ppt_path}")
-        storage.set_error(task_id, "No valid images generated from PowerPoint file")
-        return {}
+    task_id = storage.create_task(file_name, model_provider, model_name, algo="iterative")
     
     slide_count = len(image_urls)
+
     storage.update_task_status(task_id, TaskStatus.PROCESSING, slide_count)
     
-    logger.info(f"Processing {slide_count} PPT images with iterative approach...")
+    logger.info(f"Processing {slide_count} slides with iterative approach...")
     
     # Context management for iterative approach
     ctx_len = 3
@@ -70,12 +65,18 @@ def process_ppt_with_iterative(
     try:
         # Process each slide iteratively
         for slide_number, image_url in enumerate(image_urls):
-            # Extract text for this slide (0-indexed in image_urls)
-            slide_text = text_content.get(str(slide_number), "")
+            if text_content:
+                # Extract text for this slide (0-indexed in image_urls)
+                slide_text = text_content.get(str(slide_number), "")
+            else:
+                slide_text = ""
             
             # Create message content with text and image
             message_content = MessageContent()
-            message_content.entries.append(ContentEntry.text(slide_text))
+            if slide_text:
+                message_content.entries.append(ContentEntry.text(slide_text))
+            else:
+                message_content.entries.append(ContentEntry.text("No text content available for this slide"))
             message_content.entries.append(ContentEntry.image(image_url))
             
             # Create user message

@@ -17,6 +17,8 @@ logger = logging.getLogger("config")
 # Base directory for the project
 BASE_DIR = Path(__file__).parent
 
+LEC_EVAL_MODEL = ""
+
 # Model configurations
 MODEL_CONFIGS = {
     "ollama": {

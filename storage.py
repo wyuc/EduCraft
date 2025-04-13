@@ -74,7 +74,7 @@ class ScriptStorage:
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             task_id TEXT PRIMARY KEY,
-            ppt_path TEXT NOT NULL,
+            file_name TEXT NOT NULL,
             model_provider TEXT NOT NULL,
             model_name TEXT,
             algo TEXT,
@@ -100,12 +100,12 @@ class ScriptStorage:
         
         self.conn.commit()
     
-    def create_task(self, ppt_path: str, model_provider: str, model_name: Optional[str] = None, algo: Optional[str] = None) -> str:
+    def create_task(self, file_name: str, model_provider: str, model_name: Optional[str] = None, algo: Optional[str] = None) -> str:
         """
         Create a new lecture generation task and return its ID.
         
         Args:
-            ppt_path: Path to the PowerPoint file
+            file_name: Name of the file
             model_provider: Model provider (e.g., 'claude', 'gemini')
             model_name: Specific model name
             algo: Algorithm used for generation (e.g., 'vlm')
@@ -113,7 +113,7 @@ class ScriptStorage:
         Returns:
             task_id: Unique identifier for the task
         """
-        task_id = f"{Path(ppt_path).stem}_{model_provider}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        task_id = f"{file_name}_{model_provider}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
         current_time = datetime.now().isoformat()
         
@@ -121,14 +121,14 @@ class ScriptStorage:
         cursor.execute(
             '''
             INSERT INTO tasks 
-            (task_id, ppt_path, model_provider, model_name, algo, status, created_at, updated_at)
+            (task_id, file_name, model_provider, model_name, algo, status, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''',
-            (task_id, ppt_path, model_provider, model_name, algo, TaskStatus.CREATED.value, current_time, current_time)
+            (task_id, file_name, model_provider, model_name, algo, TaskStatus.CREATED.value, current_time, current_time)
         )
         self.conn.commit()
         
-        logger.debug(f"Created task {task_id} for {ppt_path}")
+        logger.debug(f"Created task {task_id} for {file_name}")
         return task_id
     
     def update_task_status(self, task_id: str, status: TaskStatus, slide_count: Optional[int] = None):
@@ -317,12 +317,12 @@ class ScriptStorage:
         rows = cursor.fetchall()
         return [dict(row) for row in rows] 
 
-    def get_latest_completed_task(self, ppt_path: str, algo: str, model_provider: str) -> Optional[Dict[str, Any]]:
+    def get_latest_completed_task(self, file_name: str, algo: str, model_provider: str) -> Optional[Dict[str, Any]]:
         """
         Get the latest completed task matching the given parameters.
         
         Args:
-            ppt_path: Path to the PowerPoint file
+            file_name: Name of the file
             algo: Algorithm used for generation
             model_provider: Model provider name
             
@@ -333,14 +333,14 @@ class ScriptStorage:
         cursor.execute(
             '''
             SELECT * FROM tasks 
-            WHERE ppt_path = ? 
+            WHERE file_name = ? 
             AND algo = ? 
             AND model_provider = ? 
             AND status = ?
             ORDER BY created_at DESC
             LIMIT 1
             ''',
-            (ppt_path, algo, model_provider, TaskStatus.COMPLETED.value)
+            (file_name, algo, model_provider, TaskStatus.COMPLETED.value)
         )
         row = cursor.fetchone()
         if row:

@@ -11,18 +11,17 @@ from config import BASE_DIR
 logger = logging.getLogger(__name__)
 
 
-def get_temp_dir(ppt_path):
-    return BASE_DIR / 'buffer' / Path(ppt_path).stem
+def get_temp_dir(input_path):
+    return BASE_DIR / 'buffer' / Path(input_path).stem
 
-def get_images_dir(ppt_path):
-    return get_temp_dir(ppt_path) / 'images'
+def get_images_dir(input_path):
+    return get_temp_dir(input_path) / 'images'
 
 def preprocess_ppt(ppt_path):
     text_content = extract_text_from_ppt(ppt_path)
     temp_dir = get_temp_dir(ppt_path)
     os.makedirs(temp_dir, exist_ok=True)
 
-    
     pptx_to_pdf(ppt_path, str(temp_dir))
 
     image_path = get_images_dir(ppt_path)
@@ -75,7 +74,7 @@ def encode_images_to_base64(img_dir):
     return image_urls
 
 
-def extract_text_from_ppt(ppt_path: str) -> str:
+def extract_text_from_ppt(ppt_path: str) -> dict:
 
     presentation = Presentation(ppt_path)
 
@@ -199,26 +198,7 @@ def extract_json(text):
             return ast.literal_eval(json_str)
         except (SyntaxError, ValueError) as e:
             print(f"AST literal_eval failed: {e}")
-            
-            # Third attempt: Try with json5 if available (most lenient JSON parser)
-            try:
-                try:
-                    import json5
-                except ImportError:
-                    # If json5 is not installed, try to install it
-                    import subprocess
-                    import sys
-                    print("json5 module not found, attempting to install...")
-                    subprocess.check_call([sys.executable, "-m", "pip", "install", "json5"])
-                    import json5
-                
-                return json5.loads(json_str)
-            except Exception as e:
-                print(f"JSON5 parsing failed: {e}")
-                
-                # Final fallback: raise a more detailed error
-                raise ValueError(f"Failed to parse JSON after multiple attempts. Original text: {text[:100]}...")
-
+            raise ValueError(f"Failed to parse JSON after multiple attempts. Original text: {text[:100]}...")
 
 def convert_pdf_to_png(input_file, output_dir):
     os.makedirs(output_dir, exist_ok=True)

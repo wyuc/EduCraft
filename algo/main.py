@@ -11,13 +11,14 @@ from algo.caption_llm import process_ppt_with_caption_llm
 from algo.iterative import process_ppt_with_iterative
 from storage import ScriptStorage
 from algo.dump2excel import scripts_to_excel
-
+from utils import preprocess_ppt, get_images_dir, convert_pdf_to_png, encode_images_to_base64
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+
 def process_ppt(
-    ppt_path: Union[str, Path],
+    input_path: Union[str, Path],
     algorithm: str = 'vlm',
     temperature: float = 0.7,
     output_dir: Optional[str] = None,
@@ -46,43 +47,21 @@ def process_ppt(
         Exception: For any algorithm-specific errors
     """
     # Convert to Path object if string
-    if isinstance(ppt_path, str):
-        ppt_path = Path(ppt_path)
+    if isinstance(input_path, str):
+        input_path = Path(input_path)
     
-    # Validate ppt_path
-    if not ppt_path.exists():
-        raise ValueError(f"PowerPoint file not found: {ppt_path}")
-    
-    # Initialize model_params if None
-    if model_params is None:
-        model_params = {}
-    
-    # Default parameters for each algorithm
-    default_params = {
-        'vlm': {
-            'model_provider': 'gemini_openai',
-            'model_name': None,
-            'max_tokens': 32768
-        },
-        'caption_llm': {
-            'model_provider': 'deepseek',
-            'model_name': None,
-            'caption_model_provider': 'gpt',
-            'caption_model_name': None,
-            'max_tokens': 8192
-        },
-        'iterative': {
-            'model_provider': 'gpt',
-            'model_name': None
-        }
-    }
-    
-    # Check if algorithm is valid
-    if algorithm not in default_params:
-        raise ValueError(f"Invalid algorithm: {algorithm}. Must be one of {list(default_params.keys())}")
-    
-    # Merge default params with provided model_params
-    params = {**default_params[algorithm], **model_params}
+    if not input_path.exists():
+        raise ValueError(f"Input file not found: {input_path}")
+
+    if input_path.suffix == '.pptx':
+        text_content, image_urls = preprocess_ppt(input_path)
+    elif input_path.suffix == '.pdf':
+        text_content = None
+        image_path = get_images_dir(input_path)
+        convert_pdf_to_png(str(input_path), str(image_path))
+        image_urls = encode_images_to_base64(image_path)
+    else:
+        raise ValueError(f"Invalid input file: {input_path}")
     
     logger.info(f"Running algorithm: {algorithm}")
     
@@ -93,31 +72,37 @@ def process_ppt(
         if algorithm == 'vlm':
             # Run VLM algorithm
             result = process_ppt_with_model(
-                ppt_path=str(ppt_path),
-                model_provider=params['model_provider'],
-                model_name=params['model_name'],
+                file_name=input_path.stem,
+                text_content=text_content,
+                image_urls=image_urls,
+                model_provider=model_params['model_provider'],
+                model_name=model_params['model_name'],
                 temperature=temperature,
-                max_tokens=params['max_tokens']
+                max_tokens=model_params['max_tokens']
             )
         
         elif algorithm == 'caption_llm':
             # Run Caption LLM algorithm
             result = process_ppt_with_caption_llm(
-                ppt_path=str(ppt_path),
-                model_provider=params['model_provider'],
-                model_name=params['model_name'],
-                caption_model_provider=params['caption_model_provider'],
-                caption_model_name=params['caption_model_name'],
+                file_name=input_path.stem,
+                text_content=text_content,
+                image_urls=image_urls,
+                model_provider=model_params['model_provider'],
+                model_name=model_params['model_name'],
+                caption_model_provider=model_params['caption_model_provider'],
+                caption_model_name=model_params['caption_model_name'],
                 temperature=temperature,
-                max_tokens=params['max_tokens']
+                max_tokens=model_params['max_tokens']
             )
         
         elif algorithm == 'iterative':
             # Run Iterative algorithm
             result = process_ppt_with_iterative(
-                ppt_path=str(ppt_path),
-                model_provider=params['model_provider'],
-                model_name=params['model_name'],
+                file_name=input_path.stem,
+                text_content=text_content,
+                image_urls=image_urls,
+                model_provider=model_params['model_provider'],
+                model_name=model_params['model_name'],
                 temperature=temperature
             )
         
@@ -128,12 +113,12 @@ def process_ppt(
         
         # If export to Excel is requested
         if export_excel:
-            _output_dir = output_dir if output_dir else os.path.dirname(ppt_path)
+            _output_dir = output_dir if output_dir else os.path.dirname(input_path)
             logger.info(f"Exporting scripts to Excel in {_output_dir}")
             scripts_to_excel(
-                ppt_path=str(ppt_path),
+                input_path=str(input_path),
                 algo=algorithm,
-                model_provider=params['model_provider'],
+                model_provider=model_params['model_provider'],
                 output_dir=_output_dir
             )
         
@@ -149,17 +134,17 @@ def process_ppt(
 def main():
     # Set up the main argument parser
     parser = argparse.ArgumentParser(
-        description='Generate lecture scripts from PowerPoint files using various AI algorithms.',
+        description='Generate lecture scripts from input files using various AI algorithms.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
     # Required arguments
-    parser.add_argument('ppt_path', help='Path to the PowerPoint file')
+    parser.add_argument('input_path', help='Path to the input file')
     
     # Shared optional arguments
     parser.add_argument('--temperature', '-t', type=float, default=0.7,
                         help='Temperature parameter for text generation (higher values = more creative)')
-    parser.add_argument('--output-dir', '-o', help='Directory to save output files (default: same as PPT directory)')
+    parser.add_argument('--output-dir', '-o', help='Directory to save output files (default: same as input file directory)')
     parser.add_argument('--export-excel', '-e', action='store_true', 
                         help='Export scripts to Excel after generation')
     
@@ -169,7 +154,7 @@ def main():
     
     # VLM algorithm subparser
     vlm_parser = subparsers.add_parser('vlm', help='Vision Language Model algorithm')
-    vlm_parser.add_argument('--model-provider', '-mp', choices=['gemini_openai', 'gemini', 'vllm', 'ollama'], default='gemini_openai',
+    vlm_parser.add_argument('--model-provider', '-mp', choices=['gemini_openai', 'gemini', 'vllm', 'ollama', 'claude'], default='gemini_openai',
                          help='Model provider to use')
     vlm_parser.add_argument('--model-name', '-m',
                          help='Specific model name')
@@ -225,7 +210,7 @@ def main():
         
         # Call the unified processing function
         process_ppt(
-            ppt_path=args.ppt_path,
+            input_path=args.input_path,
             algorithm=args.algorithm,
             temperature=args.temperature,
             output_dir=args.output_dir,

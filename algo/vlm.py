@@ -19,7 +19,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 def process_ppt_with_model(
-    ppt_path: str, 
+    file_name: str,
+    text_content: dict,
+    image_urls: List[str],
     model_provider: Literal["claude", "gemini", "ollama"] = "claude",
     model_name: Optional[str] = None,
     temperature: float = 1.0,
@@ -45,23 +47,14 @@ def process_ppt_with_model(
     storage = ScriptStorage()
     
     # Create a task in storage with algorithm set to 'vlm'
-    task_id = storage.create_task(ppt_path, model_provider, model_name, algo="vlm")
-    
-    # Use the preprocess function from caption.py to convert PPT to images
-    logger.info(f"Preprocessing PowerPoint file: {ppt_path}")
-    text_content, image_urls = preprocess_ppt(ppt_path)
-
-    if not image_urls:
-        logger.error(f"No valid images generated from {ppt_path}")
-        # Set error in storage
-        storage.set_error(task_id, "No valid images generated from PowerPoint file")
-        return {}
-    
+    task_id = storage.create_task(file_name, model_provider, model_name, algo="vlm")
+    logger.info(f"Preprocessing PowerPoint file: {file_name}")
+   
     slide_count = len(image_urls)
     # Update task with slide count
     storage.update_task_status(task_id, TaskStatus.PROCESSING, slide_count)
     
-    logger.info(f"Processing {slide_count} PPT images with extracted text...")
+    logger.info(f"Processing {slide_count} images with extracted text...")
     
     # Prepare messages for model API
     messages = []
@@ -86,9 +79,13 @@ def process_ppt_with_model(
         slide_num = i + 1
         
         # Add text content for this slide
-        slide_text = text_content.get(str(i), "")  # Get text content for this slide (0-indexed in text_content)
-        slide_info = f"This is slide {slide_num}. Extracted text content from this slide:\n{slide_text}"
-        message_content.entries.append(ContentEntry.text(slide_info))
+        if text_content:
+            slide_text = text_content.get(str(i), "")  # Get text content for this slide (0-indexed in text_content)
+            slide_info = f"This is slide {slide_num}. Extracted text content from this slide:\n{slide_text}"
+            message_content.entries.append(ContentEntry.text(slide_info))
+        else:
+            slide_info = f"This is slide {slide_num}. No text content available."
+            message_content.entries.append(ContentEntry.text(slide_info))
         
         # Add image to the message content
         message_content.entries.append(ContentEntry.image(image_url))
