@@ -19,6 +19,42 @@ BASE_DIR = Path(__file__).parent
 
 LEC_EVAL_MODEL = ""
 
+TEST_SETTING = {
+    "vlm": [
+        {
+            "model_provider": "qwen",
+            "model_name": "qwen2.5-vl-72b-instruct"
+        },
+        {
+            "model_provider": "gemini_openai",
+        },
+        {
+            "model_provider": "gpt",
+        }
+    ],
+    "caption_llm": [
+        {
+            "model_provider": "deepseek",
+        },
+        {
+            "model_provider": "qwen",
+            "model_name": "qwen2.5-72b-instruct"
+        }
+    ],
+    "iterative": [
+        {
+            "model_provider": "gpt",
+        },
+        {
+            "model_provider": "qwen",
+            "model_name": "qwen2.5-vl-72b-instruct"
+        },
+        {
+            "model_provider": "gemini_openai",
+        }
+    ]
+}
+
 # Model configurations
 MODEL_CONFIGS = {
     "ollama": {
@@ -66,6 +102,13 @@ MODEL_CONFIGS = {
         "base_url": "",
         "api_key": "",
         "default_model": "claude-3-7-sonnet-20250219"
+    },
+    
+    "qwen": {
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "api_key": "",
+        "default_model": "qwen2.5-vl-32b-instruct"
+    }
     }
 }
 

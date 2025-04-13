@@ -58,73 +58,90 @@ def process_ppt_with_caption_llm(
     slide_count = len(image_urls)
     storage.update_task_status(task_id, TaskStatus.PROCESSING, slide_count)
     
-    # Step 1: Generate captions for each slide
-    logger.info(f"Generating captions for {slide_count} slides using {caption_model_provider}...")
+    # Create output directory
+    output_dir = get_temp_dir(file_name)
+    captions_file = output_dir / "captions.json"
     
-    # Get model for caption generation
-    caption_model = ModelFactory.get_model(caption_model_provider)
-    captions = {}
-    
-    for i, image_url in enumerate(image_urls):
-        slide_num = i + 1  # Convert to 1-indexed
-        
-        if text_content:
-            # Extract text for this slide
-            slide_text = text_content.get(str(i), "")
-        else:
-            slide_text = ""
-        
-        # Create system message for caption generation
-        system_message = Message(
-            role=MessageRole.SYSTEM,
-            content=MessageContent.from_text(caption_prompt)
-        )
-        
-        # Create user message with image and extracted text
-        message_content = MessageContent()
-        if slide_text:
-            message_content.entries.append(ContentEntry.text(
-                f"Extracted text content:\n{slide_text}"
-            ))
-        else:
-            message_content.entries.append(ContentEntry.text(
-                f"No text content available for this slide"
-            ))
-        message_content.entries.append(ContentEntry.image(image_url))
-        
-        user_message = Message(
-            role=MessageRole.USER,
-            content=message_content
-        )
-        
-        # Call the model to generate caption
-        logger.info(f"Generating caption for slide {slide_num}/{slide_count}...")
+    # Check if captions.json already exists
+    if captions_file.exists():
+        logger.info(f"Found existing captions file at {captions_file}, loading instead of regenerating")
         try:
-            caption_kwargs = {
-                "temperature": 0.3
-            }
-            if caption_model_name:
-                caption_kwargs["model"] = caption_model_name
-            response = caption_model.call(
-                messages=[system_message, user_message],
-                **caption_kwargs
-            )
-            caption_text = response.content
-            captions[str(slide_num)] = caption_text
-            logger.info(f"Caption generated for slide {slide_num}")
+            with open(captions_file, "r", encoding="utf-8") as f:
+                captions = json.load(f)
+            logger.info(f"Successfully loaded captions for {len(captions)} slides")
         except Exception as e:
-            logger.error(f"Error generating caption for slide {slide_num}: {str(e)}")
-            storage.set_error(task_id, f"Error generating caption for slide {slide_num}: {str(e)}")
-            return {}
-    
-    # Save all captions to a JSON file for reference
-    try:
-        output_dir = get_temp_dir(file_name)
-        with open(output_dir / "captions.json", "w", encoding="utf-8") as f:
-            json.dump(captions, f, ensure_ascii=False, indent=2)
-        logger.info(f"Saved captions to {output_dir / 'captions.json'}")
-    except Exception as e:
-        logger.warning(f"Failed to save captions JSON: {str(e)}")
+            logger.error(f"Error loading existing captions file: {str(e)}")
+            logger.info("Will regenerate captions")
+            captions = {}
+    else:
+        captions = {}
+        
+    # Step 1: Generate captions for each slide (if not already loaded)
+    if not captions:
+        logger.info(f"Generating captions for {slide_count} slides using {caption_model_provider}...")
+        
+        # Get model for caption generation
+        caption_model = ModelFactory.get_model(caption_model_provider)
+        
+        for i, image_url in enumerate(image_urls):
+            slide_num = i + 1  # Convert to 1-indexed
+            
+            if text_content:
+                # Extract text for this slide
+                slide_text = text_content.get(str(i), "")
+            else:
+                slide_text = ""
+            
+            # Create system message for caption generation
+            system_message = Message(
+                role=MessageRole.SYSTEM,
+                content=MessageContent.from_text(caption_prompt)
+            )
+            
+            # Create user message with image and extracted text
+            message_content = MessageContent()
+            if slide_text:
+                message_content.entries.append(ContentEntry.text(
+                    f"Extracted text content:\n{slide_text}"
+                ))
+            else:
+                message_content.entries.append(ContentEntry.text(
+                    f"No text content available for this slide"
+                ))
+            message_content.entries.append(ContentEntry.image(image_url))
+            
+            user_message = Message(
+                role=MessageRole.USER,
+                content=message_content
+            )
+            
+            # Call the model to generate caption
+            logger.info(f"Generating caption for slide {slide_num}/{slide_count}...")
+            try:
+                caption_kwargs = {
+                    "temperature": 0.3
+                }
+                if caption_model_name:
+                    caption_kwargs["model"] = caption_model_name
+                response = caption_model.call(
+                    messages=[system_message, user_message],
+                    **caption_kwargs
+                )
+                caption_text = response.content
+                captions[str(slide_num)] = caption_text
+                logger.info(f"Caption generated for slide {slide_num}")
+            except Exception as e:
+                logger.error(f"Error generating caption for slide {slide_num}: {str(e)}")
+                storage.set_error(task_id, f"Error generating caption for slide {slide_num}: {str(e)}")
+                return {}
+        
+        # Save all captions to a JSON file for reference
+        try:
+            with open(captions_file, "w", encoding="utf-8") as f:
+                json.dump(captions, f, ensure_ascii=False, indent=2)
+            logger.info(f"Saved captions to {captions_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save captions JSON: {str(e)}")
     
     # Step 2: Generate lecture script from captions
     logger.info(f"Generating lecture script from captions using {model_provider}...")

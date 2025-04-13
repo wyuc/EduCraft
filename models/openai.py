@@ -182,3 +182,15 @@ class DeepSeek(GPT):
 
 
 ModelFactory.register("deepseek", DeepSeek)
+
+
+class Qwen(GPT):
+    """interface for qwen api."""
+    
+    @classmethod
+    def get_provider_name(cls) -> str:
+        """return the provider name for configuration."""
+        return "qwen"
+
+
+ModelFactory.register("qwen", Qwen)

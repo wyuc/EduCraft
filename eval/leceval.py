@@ -5,6 +5,7 @@ import re
 import numpy as np
 from storage import ScriptStorage
 from utils import get_images_dir, encode_images_to_base64
+import os
 
 MODEL_PROVIDER = "vllm"
 
@@ -105,7 +106,10 @@ def evaluate_ppt(ppt_path: str, algorithm: str, model_provider: str = None):
     if not images_dir.exists():
         raise ValueError(f"Images directory not found for {ppt_path}")
 
-    latest_task = storage.get_latest_completed_task(ppt_path, algorithm, model_provider)
+    # Extract just the filename without directory path and extension
+    file_name = os.path.splitext(os.path.basename(ppt_path))[0]
+    
+    latest_task = storage.get_latest_completed_task(file_name, algorithm, model_provider)
     if not latest_task:
         raise ValueError(f"No completed task found for {ppt_path} using algorithm {algorithm}, model provider {model_provider}")
     
