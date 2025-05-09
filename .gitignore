@@ -3,6 +3,7 @@ environment
 buffer
 paper
 app
+.cursor
 
 # Python bytecode
 __pycache__/

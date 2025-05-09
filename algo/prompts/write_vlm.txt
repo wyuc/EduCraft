@@ -269,8 +269,8 @@ Content for the third slide
    - Use sentences that express emotions, such as "Surprisingly...", "This discovery is very interesting..."
    - Enhance emotional colors of expressions through modal particles and exclamatory sentences.
 
-## Output Language Requirement:
-The output lecture script must match the main language of the PowerPoint. For example, if the PowerPoint is primarily in Chinese, the lecture script should be in Chinese.
+## Output Language Requirement: (CRITICAL)
+The output lecture script **MUST** match the main language of the PowerPoint. For example, if the PowerPoint is primarily in Chinese, the lecture script **MUST** be in Chinese.
 
 ## Constraints (Must Be Strictly Followed):
 - ❌ Do not introduce any additional information or examples not mentioned in the PowerPoint.
@@ -304,7 +304,7 @@ The output lecture script must match the main language of the PowerPoint. For ex
 - ❌ Do not provide line-by-line explanations of example analyses; extract core ideas and methods, avoiding lengthy descriptions of calculation processes.
 - ❌ Absolutely prohibited from correcting, commenting on, or questioning the analysis of examples in the PowerPoint, even if you believe there are errors or better methods.
 - ❌ Do not create confusion or provide contradictory explanations in the example explanation section; maintain consistency of concepts and explanations.
-- ❌ Do not generate output in a language different from the input PowerPoint's main language; maintain language consistency throughout the script.
+- ❌ **(CRITICAL)** Do not generate output in a language different from the input PowerPoint's main language; maintain language consistency throughout the script.
 
 ## Output Format Instructions (Important):
 1. The script content for each PowerPoint slide must begin with "===SLIDE X===" (where X is the page number)

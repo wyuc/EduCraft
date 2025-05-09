@@ -22,7 +22,19 @@ numpy>=1.24.0        # Numerical computing
 streamlit>=1.32.0    # Web interface
 streamlit-sortables>=0.2.0  # Sortable components
 pymongo>=4.6.0       # MongoDB client
-pysqlite3>=3.42.0      # SQLite client
+pysqlite3>=0.4.0      # SQLite client
+
+# RAG Dependencies
+pymilvus>=2.3.0     # Milvus client
+sentence-transformers>=2.2.2  # Text embeddings
+FlagEmbedding>=1.1.5  # BGE models
+
+# scripts
+PyPDF2>=3.0.1        # PDF processing
+
+# Plotting
+matplotlib>=3.7.0    # Plotting library
+seaborn>=0.13.0      # Enhanced plotting
 
 # Development Dependencies
 pytest>=7.4.0        # Unit testing

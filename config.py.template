@@ -116,3 +116,15 @@ MODEL_CONFIGS = {
 def get_model_config(provider):
     """Get the configuration for a specific model provider."""
     return MODEL_CONFIGS.get(provider, {})
+
+# Configuration for external services (e.g., Search APIs)
+EXTERNAL_SERVICES_CONFIG = {
+    "bing_search": {
+        "api_key": "",  # Add your Bing Search V7 API Key here (required for build_static_knowledge_base.py)
+        "endpoint": "https://api.bing.microsoft.com/v7.0/search"
+    },
+    "crawlbase": {
+        "token": "" # Add your Crawlbase API Token here (alternative for build_static_knowledge_base.py)
+    }
+    # Add other external services here if needed
+}
