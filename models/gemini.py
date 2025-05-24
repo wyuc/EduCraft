@@ -1,5 +1,7 @@
 from typing import Dict, List, Any, Iterator
 import google.generativeai as genai
+
+from models.openai import Gemini_Openai
 from .base import (
     ModelInterface, ModelResponse, Message, MessageRole, MessageContent,
     ContentEntry, ContentType

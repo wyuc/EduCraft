@@ -31,7 +31,8 @@ def process_ppt_with_caption_llm(
     use_rag: bool = False,
     kb_path: Optional[str] = None,
     embedding_model: Optional[str] = None,
-    top_k: int = 5
+    top_k: int = 5,
+    prompt_variant: Optional[str] = "full"
 ) -> Dict[str, str]:
     """
     Process a presentation file using caption-then-LLM approach:

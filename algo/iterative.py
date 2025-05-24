@@ -28,7 +28,8 @@ def process_ppt_with_iterative(
     use_rag: bool = False,
     kb_path: Optional[str] = None, 
     embedding_model: Optional[str] = None,
-    top_k: int = 5
+    top_k: int = 5,
+    prompt_variant: str = "full"
 ) -> Dict[str, str]:
     """
     Process a input file using iterative approach.

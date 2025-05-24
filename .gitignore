@@ -2,8 +2,9 @@ data
 environment
 buffer
 paper
-app
+app_legacy
 .cursor
+6822b069cb9d18d92c30645e
 
 # Python bytecode
 __pycache__/

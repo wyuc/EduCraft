@@ -508,9 +508,6 @@ def main():
     # Only evaluate (no generation)
     parser.add_argument('--eval-only', action='store_true',
                         help='Only evaluate existing scripts without generation (requires input path)')
-    # Generate scores report from existing evaluation results (DEPRECATED but kept for compatibility)
-    parser.add_argument('--report', metavar='EVAL_RESULTS_PATH', 
-                        help='DEPRECATED: Use --report-only instead. Generate report from results.')
     # Generate ONLY the scores report from existing evaluation results
     parser.add_argument('--report-only', metavar='EVAL_RESULTS_PATH', 
                         help='Generate ONLY the scores reports (summary and individual) from an existing evaluation results JSON file.')
@@ -520,10 +517,6 @@ def main():
     if args.report_only:
         print(f"Generating reports only from: {args.report_only}")
         generate_scores_report(args.report_only)
-    elif args.report: # Handle deprecated argument
-        print(f"Generating reports from (using deprecated --report): {args.report}")
-        print("Warning: --report is deprecated. Please use --report-only in the future.")
-        generate_scores_report(args.report)
     elif args.eval_only:
         if not args.input:
             parser.error("--eval-only requires the input path argument.")

@@ -30,7 +30,8 @@ def process_ppt_with_direct_prompt( # Renamed function
     max_tokens: int = 32768,
     # Removed RAG parameters
     caption_model_provider: Literal["gpt", "gemini", "vllm", "claude", "qwen"] = "gpt",
-    caption_model_name: Optional[str] = None
+    caption_model_name: Optional[str] = None,
+    prompt_variant: str = "full"
 ) -> Dict[str, str]:
     """
     Process a input file using selected model with a minimal direct prompt.
