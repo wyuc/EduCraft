@@ -6,7 +6,7 @@
 
 **EduCraft** is a novel system designed to automate Lecture Script Generation (LSG) from multimodal presentations, addressing key challenges in educational content creation including comprehensive multimodal understanding, long-context coherence, and instructional design efficacy.
 
-## 🎯 Overviee
+## 🎯 Overview
 
 Educators face substantial workload pressures, with significant time invested in preparing teaching materials. EduCraft tackles the demanding task of generating high-quality lecture scripts from slides and presentations, offering a practical solution to reduce educator workload and enhance educational content creation.
 
